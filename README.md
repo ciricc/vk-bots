@@ -20,6 +20,20 @@ A simple library for quickly creating functional and responsive vkontakte bots
 
 ### Приступим
 
+### Установка
+
+#### NPM
+
+```sh
+npm i vk-bots --save
+```
+
+#### Yarn
+
+```sh
+yarn add vk-bots
+```
+
 <b>Библиотека находится в BETA версии. Она писалась для проектов, которые сейчас уже работают, но пока что из нее не удалены полностью все лишние остатки и она не доделана до ума. Но вы реально уже сейчас можете ее тестировать, проверять, как оно, нравится или нет</b>
 
 <img src="https://psv4.userapi.com/c848332/u356607530/docs/d17/43481803604b/corpwars5.gif?extra=5dvMvfJ5Tc_cgGUDEUAPo12MEL3Nd6D--Gy_o1UXC18BljMleNU717cNNFv8Sbv3KGr0SZAM9xGw64SeNCmS7fRhDGYltDbpK11awJ_kXTxB_bcJiLc4Ttk96cmQKBQz8VNfMEAILQczoPliks11j-4"/>
