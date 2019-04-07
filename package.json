@@ -1,0 +1,31 @@
+{
+  "name": "vk-bots",
+  "version": "0.0.1",
+  "description": "A simple library for quickly creating functional and responsive vkontakte bots",
+  "main": "index.js",
+  "scripts": {
+    "test": "eslint index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ciricc/vk-bots.git"
+  },
+  "keywords": [
+    "vk",
+    "api",
+    "bots",
+    "simple",
+    "easyvk",
+    "vkontakte",
+    "rest"
+  ],
+  "author": "ciricc",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ciricc/vk-bots/issues"
+  },
+  "homepage": "https://github.com/ciricc/vk-bots#readme",
+  "dependencies": {
+    "fast-event-emitter": "0.0.2"
+  }
+}
