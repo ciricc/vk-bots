@@ -24,86 +24,162 @@ A simple library for quickly creating functional and responsive vkontakte bots
 
 ```javascript
 
-const easyvk = require('easyvk');
-const VkBot = require('vk-bots');
+const easyvk = require('easyvk')
+const VkBot = require('../npm/vk-bots')
+
 async function main () {
-  
+ 
   let group = await easyvk({
-    access_token: '{ТОКЕН_ГРУППЫ}'
-  })
+    access_token: '06ab6360d97565080400b354635bbfe27629000bbf3efec08f95eae45a3a27b681b52aec1c6259d7b2e9a',
+    session_file: __dirname + '/my-session',
+    utils: {
+      bots: true
+    }
+  });
 
   // null - это пропуск объекта vkUser для создания чат-ботов на User LongPoll
   // в следующих релизах это будет удалено
+
   let Bot = new VkBot(null, group, {
     onlyGroup: true
-  })
+  });
+
 
   let cars = [
-    "Acura", 
-    "Alfa Romeo", 
-    "Aston Martin", 
-    "Audi", 
-    "Bentley", 
-    "BMW", 
-    "Bugatti"
+    'Acura',
+    'Alfa Romeo',
+    'Aston Martin',
+    'Audi',
+    'Bentley',
+    'BMW',
+    'Bugatti'
   ]
 
+  // Я всегда делаю так, потому что так проще
   let Dialogs = {
     selectCar: Bot.createDialog('select_car')
   }
 
+  // Создаем кнопки для всех диалогов. У каждого диалога - свои кнопки
+  // Использование каких-то кнопок внутри других диалогов не будет работать!
   let Buttons = {
     selectCar: {
-      cancel: Dialogs.selectCar.createButton('Отмена', 'negative')
+      cancel: Dialogs.selectCar.createButton('Отмена', 'negative'),
+      apply: Dialogs.selectCar.createButton('Вывози давай', 'primary')
+    },
+    Bot: {
+      clickMe: Bot.createButton('Кликни меня', 'positive')
     }
   }
 
-  function myGarage () {
-    return cars.map((n, i) => `${i + 1}. ${n}`).join('\n')
-  }
 
-  function selectCar (carNum = 0) {
-    carNum += -1;
-    if (!cars[carNum]) return 'Введите правильный номер машины';
-    return `Вы выбрали машину под номером ${carNum + 1} - ${cars[carNum]}`;
-  }
 
-  Dialogs.selectCar.setIniter(async ({reply}) => {
-    return reply(myGarage());
-  });
+  let users = {}
 
-  Dialogs.selectCar.defaultCommand = async ({msg, reply}) => {
+  // Именуем клавиатуру по умолчанию
+  Dialogs.selectCar.addDefaultKeyBoard([[Buttons.selectCar.apply], [Buttons.selectCar.cancel]]);
+
+  /*
+   *  Создаем инциализирующую функцию диалога, она вызывается, когда
+   *  вызывается диалог (переключение вперед-назад)
+   *  
+  */
+
+  Dialogs.selectCar.setIniter(async ({ reply }) => 
+    reply(myGarage(), Dialogs.selectCar.defaultKeyBoard)
+  );
+
+  // Команда по умолчанию, когда ни одна команда не сработала (не была вызвана)
+  Dialogs.selectCar.defaultCommand = async ({ msg, reply }) => {
     let carNum = msg.text;
 
-    if (curNum && !isNaN(carNum)) {
-      return reply(selectCar(Number(carNum)));
-    }
-    
-    return reply('Введите правильное число');
+    if (carNum && !isNaN(carNum)) 
+      return reply(selectCar(Number(carNum), msg.peer_id));
+
+    return reply('Номер дай. Не вижу');
   }
 
-  Dialogs.selectCar.command('отмена', async ({backDialog}) => {
-    return backDialog(true);
-  }, Buttons.selectCar.cancel);
+  // Создаем команду "отмена" - текстовое представление (RegExp) и кнопочное - selectCar.cancel
+  Dialogs.selectCar.command('отмена', async ({ backDialog }) => backDialog(true), 
+    Buttons.selectCar.cancel
+  );
 
-  Bot.command('машина {carNum}?', async ({carNum, reply, changeDialog}) => {
+  // Команда "вывози"
+  Dialogs.selectCar.command('вывози', async ({msg, backDialog, reply}) => {
+    
+    let selected = getSelected(msg.peer_id);
 
-    if (curNum && !isNaN(carNum)) {
-      return reply(selectCar(Number(carNum)));
-    }
+    return (
+      selected ? (
+        reply(selected, []), 
+        backDialog(false)
+      ) : reply('Ну ты сначала тачку-то выбери')
+    );
+
+  }, Buttons.selectCar.apply);
+ 
+  /* 
+   * Более сложная команда "машина {номер_машины}", где 
+   * carNum - переменная, которая после будет передана в функцию, как обычное свойство
+   * знак вопроса после означает, что переменная может быть опущена, и не обязательна
+   *
+   */
+
+  Bot.command('машина {carNum}?', async ({ carNum, reply, changeDialog }) => {
+    if (carNum && !isNaN(carNum)) 
+      return reply(selectCar(Number(carNum), msg.peer_id));
 
     return changeDialog('select_car');
+  })
 
+  
+  Bot.defaultCommand = async ({ reply }) => reply('Дай команду "машина {номер_машины}", я вывезу', [[Buttons.Bot.clickMe]])
+  
+  Bot.setIniter(async ({reply}) => 
+    reply('Не подцепи ничего, братан. Покеда', [])
+  );
+
+  /*
+   *  Обрабатываем событи клика по кнопке. У каждой кнопки свой уникальный идентификатор,
+   *  поэтому кликая по кнопке - вы именно кликаете по кнопке, а не делаете команду "клик"
+   *  Может понадобится ботам, которые работают толькона кнопках и не поддерживают старые клиенты ВК
+   * 
+   */
+
+  Buttons.Bot.clickMe.on('click', async ({reply}) => {
+    return reply('Кликнул на кнопку, ну надо же :)', [[Buttons.Bot.clickMe]])
+  })
+  
+  // После указания всех диалогов и их последовательностей, запускаем бота
+  Bot.start().then(({bot}) => {
+    console.log('Бот запущен!');  
+    bot.on('group_join', console.log);
   });
 
-  Bot.defaultCommand = async ({ reply }) => {
-    reply(
-      `Чтобы выбрать машину, введите команду "машина {номер_машины}"`
-    );
+  function myGarage () { return cars.map((n, i) => `${i + 1}. ${n}`).join('\n'); }
+
+  function getSelected (uid = 0) {
+    let user = users[uid];
+
+    if (!user) return false;
+    let car = cars[user.selectedCar];
+
+    return `Понял. Принял. Вывожу из гаража тачку ${car}`;
   }
+
+  function selectCar (carNum = 0, uid = 0) {
+    carNum += -1;
+    
+    if (!cars[carNum]) return 'Номер дай. Не вижу';
+    
+    users[uid] = {selectedCar: carNum};
+
+    return `Выбираешь ${cars[carNum]}?`;
+  }
+
 }
 
+main()
 
-main();
 
 ```
