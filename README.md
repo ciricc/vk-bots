@@ -22,6 +22,8 @@ A simple library for quickly creating functional and responsive vkontakte bots
 
 <b>Библиотека находится в BETA версии. Она писалась для проектов, которые сейчас уже работают, но пока что из нее не удалены полностью все лишние остатки и она не доделана до ума. Но вы реально уже сейчас можете ее тестировать, проверять, как оно, нравится или нет</b>
 
+<img src="https://psv4.userapi.com/c848332/u356607530/docs/d17/43481803604b/corpwars5.gif?extra=5dvMvfJ5Tc_cgGUDEUAPo12MEL3Nd6D--Gy_o1UXC18BljMleNU717cNNFv8Sbv3KGr0SZAM9xGw64SeNCmS7fRhDGYltDbpK11awJ_kXTxB_bcJiLc4Ttk96cmQKBQz8VNfMEAILQczoPliks11j-4"/>
+
 ```javascript
 
 const easyvk = require('easyvk')
@@ -125,18 +127,25 @@ async function main () {
    *
    */
 
-  Bot.command('машина {carNum}?', async ({ carNum, reply, changeDialog }) => {
-    if (carNum && !isNaN(carNum)) 
-      return reply(selectCar(Number(carNum), msg.peer_id));
+  Bot.command('машина {carNum}?', async ({ carNum, msg, reply, changeDialog }) => {
+    if (carNum && !isNaN(carNum)) {
+      let replyWith = selectCar(Number(carNum), msg.peer_id);
+      let car = getSelected(msg.peer_id);
+      console.log(replyWith, car)
+      return (car) ? reply(car, [[Buttons.Bot.clickMe]]) : reply(replyWith, [[Buttons.Bot.clickMe]]);
+    }
 
     return changeDialog('select_car');
   })
 
-  
-  Bot.defaultCommand = async ({ reply }) => reply('Дай команду "машина {номер_машины}", я вывезу', [[Buttons.Bot.clickMe]])
+
+  Bot.defaultCommand = async ({ reply }) => 
+    reply('Дай команду "машина {номер_машины}", я вывезу', 
+      [[Buttons.Bot.clickMe]]
+    )
   
   Bot.setIniter(async ({reply}) => 
-    reply('Не подцепи ничего, братан. Покеда', [])
+    reply('Не подцепи ничего, братан. Покеда', [[Buttons.Bot.clickMe]])
   );
 
   /*
@@ -169,8 +178,8 @@ async function main () {
 
   function selectCar (carNum = 0, uid = 0) {
     carNum += -1;
-    
-    if (!cars[carNum]) return 'Номер дай. Не вижу';
+  
+    if (!cars[carNum] || carNum < 0) return 'Номер дай. Не вижу';
     
     users[uid] = {selectedCar: carNum};
 
