@@ -50,7 +50,9 @@ async function main () {
     session_file: __dirname + '/my-session',
     utils: {
       bots: true
-    }
+    },
+    mode: 'highload', // Режим для чат-ботов, по сути
+    api_v: '5.92'
   });
 
   // null - это пропуск объекта vkUser для создания чат-ботов на User LongPoll
