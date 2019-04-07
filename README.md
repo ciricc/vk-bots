@@ -25,7 +25,7 @@ A simple library for quickly creating functional and responsive vkontakte bots
 ```javascript
 
 const easyvk = require('easyvk')
-const VkBot = require('../npm/vk-bots')
+const VkBot = require('vk-bots')
 
 async function main () {
  
