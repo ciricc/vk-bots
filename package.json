@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/ciricc/vk-bots#readme",
   "dependencies": {
+    "easyvk": "^2.4.11",
     "fast-event-emitter": "0.0.2"
   }
 }
