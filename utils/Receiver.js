@@ -58,7 +58,7 @@ class Receiver {
     return this;
   }
 
-  defaultKeyboard (keyboard) {
+  keyboard (keyboard) {
     if (!(keyboard instanceof Keyboard)) throw new Error('Default keyboard must be Keyboard class only!')
     this.__defaultKeyboard = keyboard;
   }

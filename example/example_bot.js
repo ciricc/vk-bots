@@ -170,10 +170,10 @@ async function main () {
     message.reply('Добро пожаловать домой!')
   })
 
-  SelectGenre.defaultKeyboard(selectGenreKeyboard)
-  Settings.defaultKeyboard(settingsKeyboard)
+  SelectGenre.keyboard(selectGenreKeyboard)
+  Settings.keyboard(settingsKeyboard)
 
-  bot.defaultKeyboard(botKeyboard)
+  bot.keyboard(botKeyboard)
 
   // Запускаем бота
   let connection = await bot.start()

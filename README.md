@@ -176,7 +176,7 @@ botKeyboard.oneTime(false) // Тут неодноразовая
 Мы сделаем вторым способом
 
 ```javascript
-bot.defaultKeyboard(botKeyboard)
+bot.keyboard(botKeyboard)
 ```
 
 Теперь клавиатура будет отправляться по умолчанию вместе с текстом сообщения, если она не изменена на другую (внутренняя оптимизация запросов, не более)
@@ -232,7 +232,7 @@ const settingsKeyboard = new Keyboard(
 
 settingsKeyboard.addRow([new Button('Назад', 'negative')]) // Добавим строку в клавиатуру
 
-Settings.defaultKeyboard(settingsKeyboard)
+Settings.keyboard(settingsKeyboard)
 
 Settings.addCommand(new Command({
   match: 'жанр',
