@@ -1,11 +1,11 @@
 const Button = require('./Button')
 const Utils = require('./Utils')
+const Keyboard = require('./Keyboard')
 
 class Command {
   constructor (options = {}) {
     if (!options.match) throw new Error('Options match is undefined!')
     if (!options.handler || typeof options.handler !== "function") throw new Error('Option handler must be function only')
-    
 
     let argsRegExp = /\s?({(.*?)}\s?)/g
 
@@ -21,12 +21,29 @@ class Command {
     
     if (!Array.isArray(options.buttons) && options.buttons !== undefined) options.buttons = [options.buttons]     
 
-    this.btnIds = [];
+    let btnIds = [];
+
+
+
+
+    let _args = {}
+
+    if (options.keyboard && !(options.keyboard instanceof Keyboard)) {
+      throw new Error('Keyboard must instances from Keyboard class')
+    }
+
+
+
+    if (options.keyboard) {
+      for (let id in options.keyboard.buttons) {
+        btnIds.push(id)
+      }
+    }
 
     if (options.buttons !== undefined) {
       options.buttons.forEach((btn) => {
         if (!(btn instanceof Button)) throw new Error('Buttons must content Button classes only')
-        this.btnIds.push(btn.id)
+        btnIds.push(btn.id)
         btn.on('click', (args) => {
           options.handler(...args)
         })    
@@ -34,13 +51,9 @@ class Command {
     } else {
       options.buttons = []
     }
-
-    let _args = {}
     
-    this.enabled = true;
-
     Object.assign(this, options)
-    
+
     args.forEach((arg, i) => {
       _args[arg] = (options.args && options.args[arg]) ?  Object.assign(options.args[arg], {
         index: realArgs.indexOf(`{${arg}}`)
@@ -51,9 +64,20 @@ class Command {
       }
     })
 
-    
-    this.commandRegExp = commandRegExp;
-    this.args = _args;
+    let protectedProps ={
+      commandRegExp: commandRegExp,
+      args: _args,
+      btnIds: btnIds
+    }
+
+    for (let prop in protectedProps) {
+      Object.defineProperty(this, prop, {
+        value: protectedProps[prop],
+        writeable: false
+      })
+    }
+
+    this.enabled = true;
 
   }
 }

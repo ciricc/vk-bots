@@ -2,7 +2,7 @@ const Command = require('./Command')
 const Keyboard = require('./Keyboard')
 
 class Receiver {
-  constructor (name) {
+  constructor (name, defaults=false) {
     this.receiverName = name;
     
     this.id = String(new Date().getTime()) + String(Math.random() * 1000)
@@ -10,25 +10,39 @@ class Receiver {
     this.handlers = [];
     this.commands = {}
     
+    this.isDefault = defaults;
+
     this.buttonsCommands = {}
 
     this.prefixes = [];
-
     this.__defaultKeyboard = null;
   }
 
-  command (regexp, handler, buttons = []) {
+  command (regexp, handler, keyboard={}, buttons = []) {
 
-    let command = new Command({
-      match: regexp,
-      handler: handler,
-      buttons: buttons
-    });
+    class AddCommand extends Command {
+      constructor () {
+        let props = {
+          match: regexp,
+          handler,
+          buttons,
+        }
+        
+        if (keyboard && keyboard.rows) props.keyboard = keyboard;
+        super(props)
+      }
+    }
 
-    return this.addCommand(command)
+    return this.addCommand(AddCommand)
   }
 
   addCommand (command) {
+
+    if ("function" === typeof command) {
+      command = new command(this);
+    } else {
+      throw new Error('Command must be only class!')
+    }
 
     if (!(command instanceof Command)) throw new Error('Command must be Command class!!')
 
@@ -92,22 +106,42 @@ class Receiver {
       if (message.payload && message.payload.bid) {
         let regexp = this.buttonsCommands[message.payload.bid]
         if (regexp) {
-          handler = this.commands[regexp].handler;
-          buttons = this.commands[regexp].buttons;
-          args = this.commands[regexp].args;
+          let cmd = this.commands[regexp];
+          handler = cmd.handler;
+          buttons = cmd.buttons;
+          args = cmd.args;
+          if (cmd.keyboard) {
+            let _buttons = [];
+            for (let id in cmd.keyboard.buttons) {
+              let coords = cmd.keyboard.buttons[id];
+              _buttons.push(cmd.keyboard.rows[coords[0]][coords[1]])
+            }
+            buttons = _buttons;
+          }
+          if (cmd.keyboard) keyboard = cmd.keyboard;
         }
       } else {
         for (let regexp in this.commands) {
           if (message.text.match(new RegExp(regexp, 'gi'))) {
-            handler = this.commands[regexp].handler;
-            buttons = this.commands[regexp].buttons;
-            args = this.commands[regexp].args;
+            let cmd = this.commands[regexp];
+            handler = cmd.handler;
+            buttons = cmd.buttons;
+            args = cmd.args;
+            if (cmd.keyboard) {
+              let _buttons = [];
+              
+              Object.values(cmd.keyboard.buttons, coords => {
+                _buttons.push(cmd.keyboard.rows[coords[0]][coords[1]])
+              });
+              buttons = _buttons;
+            }
+            if (cmd.keyboard) keyboard = cmd.keyboard;
             break;
           } 
         }
       }
     }
-
+    console.log(keyboard, buttons)
     return {handler, buttons, args, keyboard}
   }
 }

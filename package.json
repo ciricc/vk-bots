@@ -1,6 +1,6 @@
 {
   "name": "vk-bots",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A simple library for quickly creating functional and responsive vkontakte bots",
   "main": "index.js",
   "scripts": {

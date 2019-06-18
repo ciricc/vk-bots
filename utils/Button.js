@@ -4,7 +4,7 @@ const EventEmitter = require('fast-event-emitter')
 const Utils = require('./Utils')
 
 class Button extends EventEmitter {
-  constructor (text='000', color='default', payload = {}) {
+  constructor (name= '', text=':)', color='default', payload = {}) {
     super()
 
     let obj = {
@@ -15,6 +15,16 @@ class Button extends EventEmitter {
       },
       color: color
     }
+
+    let _name = String(name).replace(/\s/g, "");
+    if (!name || !_name.length || typeof name !== "string") throw new Error('Button name must be sizeable string')
+    name = _name;
+
+    Object.defineProperty(this, "name", {
+      value: name,
+      writeable: false,
+      enumerable: false,
+    })
 
     Object.assign(this, obj)
 
@@ -30,9 +40,9 @@ class Button extends EventEmitter {
     this.action = this.action || {}
     this.action.payload = this.action.payload || {}
 
-    let id = Utils.hashCode(this.action.label) || Utils.hashCode(String(new Date().getTime()))
+    let id = Utils.hashCode(this.action.label);
     
-    id = id + '_' + color;
+    id = id + '_' + color + '_' + name;
 
     Object.defineProperty(this, 'origin', obj)
     Object.defineProperty(this, 'id', {

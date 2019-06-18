@@ -5,7 +5,7 @@ const Module = {
   Keyboard: require('./utils/Keyboard'),
   Bot: require('./utils/Bot'),
   Command: require('./utils/Command'),
-  version: '0.0.2'
+  version: '0.0.3'
 }
 
 module.exports = Module

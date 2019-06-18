@@ -1,6 +1,7 @@
 class ReceiveMessage {
   constructor (bot, messageObject = {}, keyboardDefault = null) {
     Object.assign(this, messageObject);
+    
     Object.defineProperty(this, "reply", {
       value: async (...args) => {
         return bot.reply({
@@ -10,6 +11,7 @@ class ReceiveMessage {
         }, ...args)
       } 
     })
+    
   }
 }
 

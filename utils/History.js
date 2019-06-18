@@ -40,6 +40,7 @@ class History extends EventEmitter {
       this.location = this.states[this.states.length - 1]
     } //If doesnt have then need only one back
 
+    console.log(this.location)
     this.emit('change', this.location)
 
     return this

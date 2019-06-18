@@ -24,10 +24,13 @@ class Bot extends Receiver {
 
     this.keyboards = {}
     this.histories = {}
+    
+    this.defaultReceiver = "";
 
     // EasyVK object
     this.vk = null;
-
+    this.handlers = [];
+    this.eventListeners = {}
   }
 
   addReceivers (arrayOfReceivers = []) {
@@ -35,7 +38,14 @@ class Bot extends Receiver {
     if (!Array.isArray(arrayOfReceivers)) throw new Error('Receivers must be array')
 
     arrayOfReceivers.forEach(receiver => {
+      
+      if ("function" === typeof receiver) {
+        receiver = new receiver(this);
+      }
+    
       if (receiver.receiverName === 'default') throw new Error('Receiver can not have a default name!')
+      if (receiver.isDefault) this.defaultReceiver = receiver.receiverName;
+
       this.receivers.push(receiver)
       this.receiversNames[receiver.receiverName] = this.receivers.length - 1; // Index of receiver
     })
@@ -43,16 +53,88 @@ class Bot extends Receiver {
     return this
   }
 
+  __InitConnectionHandlers () {
+    if (!this.connection) return false;
+
+    for (let event in this.eventListeners) {
+      let handlerIndexes = this.eventListeners[event];
+      // handlerIndexes.forEach(d)
+      this.__InitConnectionHandler(event)
+    }
+
+  }
+
+  __InitConnectionHandler (eventName, handler) {
+    let handlerIndexes = this.eventNames[eventName];
+
+    handlerIndexes.forEach(index => {
+      this.connection.on(eventNames, this.eventListeners[index])
+    })
+  }
+
+  on (eventNames, handler) {
+    let isArray = true;
+    if (!Array.isArray(eventNames)) {
+      isArray = false;
+      eventNames = [eventNames]
+    };
+    if (typeof handler !== "function") throw new Error('Handler with on() method must be function only')
+
+    this.handlers.push(handler)
+    let indexHandler = this.handlers.length - 1;
+    eventNames.forEach(event => {
+      let eventIndex = event.toString()
+
+      if (!this.eventListeners[eventIndex]) this.eventListeners[eventIndex] = [];
+
+      this.eventListeners[eventIndex].push((!isArray) ? (...data) => {
+        this.handlers[indexHandler](...data)
+      } : (...data) => {
+        this.handlers[indexHandler]({
+          event,
+          data
+        })
+      });
+
+    });
+
+    this.__InitConnectionHandlers();
+  }
+
+  emit (eventName, ...data) {
+    let indexHandler = this.eventListeners[eventName];
+    if (indexHandler === undefined) return false;
+    let handler = this.handlers[indexHandler]
+    if (handler === undefined) return false;
+    try {
+      handler(...data)
+    } catch (e) {
+      return false;
+    }
+  }
+
   async start () {
     return new Promise(async (resolve, reject) => {
 
-      this.vk = await easyvk({
+      let easyvkOptions = this.options.easyvkOptions || {};
+      easyvkOptions = Object.assign(easyvkOptions, {
         access_token: this.options.token,
-        utils: {
-          bots: true
-        },
         api_v: '5.95'
       });
+      
+      if (easyvkOptions.utils) {
+        easyvkOptions.utils.bots = true;
+      } else {
+        easyvkOptions.utils = {
+          bots: true
+        }
+      }
+
+      if (this.options.easyvkOptions) {
+        easyvkOptions.api_v = this.options.easyvkOptions.api_v || easyvkOptions.api_v;
+      }
+
+      this.vk = await easyvk(easyvkOptions);
 
       if (this.vk.session.group_id === undefined) throw new Error('Token must be only group type!')
 
@@ -67,6 +149,7 @@ class Bot extends Receiver {
 
       this.connection = connection;
 
+      this.__InitConnectionHandlers();
       this.__InitHandlers();
 
       return resolve(connection);
@@ -94,13 +177,13 @@ class Bot extends Receiver {
 
       
       let currentReceiver = (history) ? 
-        (history.location === "default") ? this :
+        (history.location === "default") ? ((this.defaultReceiver) ? this.receivers[this.receiversNames[this.defaultReceiver]] : this)  :
           (history.location.receiverName) ? 
             history.location : 
             this.receivers[this.receiversNames[history.location]]
       : this;
 
-
+      console.log(history.location, currentReceiver, this.defaultReceiver)
 
       let {handler, buttons, args, keyboard} = currentReceiver.__InitCommand(msg)
       
@@ -162,7 +245,7 @@ class Bot extends Receiver {
 
         if (state === "default") {
           handlerArgs[0] = new ReceiveMessage(this, msg, this.__defaultKeyboard)
-          return this.__Init(...handlerArgs)
+          return (this.defaultReceiver) ? this.receivers[this.receiversNames[this.defaultReceiver]].__Init(...handlerArgs) : this.__Init(...handlerArgs)
         }
 
         let receiverIndex = this.receiversNames[state]
@@ -186,6 +269,7 @@ class Bot extends Receiver {
             buttons.forEach(btn => {
               if (btn.id === msg.payload.bid) {
                 btn.emit(currentReceiver.receiverName + currentReceiver.id + '_click', handlerArgs)
+                btn.emit('click', handlerArgs)
                 emited = true;
               }
             })
@@ -219,8 +303,10 @@ class Bot extends Receiver {
     })
   }
 
-  async reply (originalMessage, message) {
+  async reply (originalMessage, message, properties={}) {
     
+    let _message = Object.assign({}, properties);
+
     if (typeof message === "string") {
       message = new Message({
         text: message
@@ -260,6 +346,14 @@ class Bot extends Receiver {
     if (Number(this.vk.params.api_v) >= 5.9) {
       msg.random_id = new Date().getTime() + '' + Math.floor(Math.random() * 1000)
     }
+
+    _message.keyboard = undefined;
+    _message.text = undefined;
+    _message.random_id = undefined;
+
+    msg = Object.assign(msg, JSON.parse(JSON.stringify(_message)));
+    
+    console.log(msg);
 
     return (msg.keyboard) ? this.vk.post('messages.send', msg)  : this.vk.call('messages.send', msg)
   }
