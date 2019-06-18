@@ -15,19 +15,20 @@ class Button extends EventEmitter {
 
     let obj = {
       action: {
-        type: 'text',
+        type: Button.TEXT_TYPE,
         label: text,
       },
       color: color
     }
     
+    /** Why ?? */
     if (options.label === undefined) delete options.label;
 
     Object.assign(obj.action, options);
 
-    if (obj.action.type !== "text") {
+    if (obj.action.type !== Button.TEXT_TYPE) {
       delete obj.color;
-      if (obj.action.type !== "open_app") {
+      if (obj.action.type !== Button.VK_APPS_TYPE) {
         if (obj.action.label) delete obj.action.label;
       }
     }
@@ -71,7 +72,7 @@ class Button extends EventEmitter {
     this.action.payload = this.action.payload || {}
 
     let id = Utils.hashCode(this.action.label || '');
-    
+
     id = id + '_' + color + '_' + name;
 
     Object.defineProperty(this, 'origin', obj)
@@ -107,5 +108,10 @@ Button.GREEN = 'positive'
 Button.BLUE = 'primary'
 Button.RED = 'negative'
 Button.WHITE = 'default'
+
+Button.VK_PAY_TYPE = 'vk_pay';
+Button.LOCATION_TYPE = 'location';
+Button.VK_APPS_TYPE = 'open_app';
+Button.TEXT_TYPE = 'text';
 
 module.exports = Button
