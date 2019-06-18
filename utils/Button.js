@@ -4,16 +4,36 @@ const EventEmitter = require('fast-event-emitter')
 const Utils = require('./Utils')
 
 class Button extends EventEmitter {
-  constructor (name= '', text=':)', color='default', payload = {}) {
+  constructor (name= '', text=':)', color='default', options = {}) {
     super()
+
+    if (typeof text === "object") {
+      options = text;
+      text = String(options.label);
+      options.label = undefined;
+    }
 
     let obj = {
       action: {
         type: 'text',
         label: text,
-        payload: payload
       },
       color: color
+    }
+    
+    if (options.label === undefined) delete options.label;
+
+    Object.assign(obj.action, options);
+
+    if (obj.action.type !== "text") {
+      delete obj.color;
+      if (obj.action.type !== "open_app") {
+        if (obj.action.label) delete obj.action.label;
+      }
+    }
+
+    if (!obj.action.payload) {
+      obj.action.payload = {}
     }
 
     let _name = String(name).replace(/\s/g, "");
@@ -24,6 +44,16 @@ class Button extends EventEmitter {
       value: name,
       writeable: false,
       enumerable: false,
+    })
+
+    Object.defineProperty(this, "defaultSettings", {
+      value: {
+        action: obj.action,
+        color: color,
+        label: obj.action.label,
+        payload: obj.action.payload
+      },
+      enumerable: false
     })
 
     Object.assign(this, obj)
@@ -40,7 +70,7 @@ class Button extends EventEmitter {
     this.action = this.action || {}
     this.action.payload = this.action.payload || {}
 
-    let id = Utils.hashCode(this.action.label);
+    let id = Utils.hashCode(this.action.label || '');
     
     id = id + '_' + color + '_' + name;
 
@@ -51,8 +81,11 @@ class Button extends EventEmitter {
     })
 
     this.action.payload.bid = this.id
-    this.action.payload = JSON.stringify(this.action.payload).replace(/\\/g, '')
+    this.__savePayload()
+  }
 
+  __savePayload () {
+    this.action.payload = JSON.stringify(this.action.payload).replace(/\\/g, '')
   }
 
   withId (id = 0) {
