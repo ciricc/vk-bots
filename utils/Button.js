@@ -109,7 +109,7 @@ Button.BLUE = 'primary'
 Button.RED = 'negative'
 Button.WHITE = 'default'
 
-Button.VK_PAY_TYPE = 'vk_pay';
+Button.VK_PAY_TYPE = 'vkpay';
 Button.LOCATION_TYPE = 'location';
 Button.VK_APPS_TYPE = 'open_app';
 Button.TEXT_TYPE = 'text';
